@@ -1,0 +1,1 @@
+SELECT * FROM dim.listings WHERE valid_to IS NOT NULL LIMIT 10;

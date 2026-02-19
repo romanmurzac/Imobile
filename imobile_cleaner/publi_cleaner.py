@@ -1,8 +1,9 @@
 import re
 import json
+import argparse
 
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 
 class PubliCleaner:
@@ -30,7 +31,7 @@ class PubliCleaner:
     def extract_str_multiple(self, raw: dict, key: str) -> list:
         result_1 = None
         result_2 = None
-        result_3 = None
+        result_3 = ""
         parts = [p.strip() for p in raw.get(key, "")[0].split(",") if p.strip()]
         if len(parts) == 1:
             result_1 = parts[0].capitalize()
@@ -153,44 +154,85 @@ class PubliCleaner:
         return True if re.search(r"\bmetrou(l)?\b", text) else None
 
 
+def extract_date_from_filename(file: Path) -> date:
+    match = re.search(r"(\d{4}_\d{2}_\d{2})", file.stem)
+    if match:
+        return datetime.strptime(match.group(1), "%Y_%m_%d").date()
+    return None
+
+
+def get_files_to_process(mode: str, from_date: str = None, specific_date: str = None) -> list[Path]:
+    raw_dir = Path(__file__).parent.parent / "data/raw"
+    all_files = sorted(raw_dir.glob("*.json"))
+
+    if mode == "fullload":
+        return all_files
+
+    elif mode == "from":
+        cutoff = datetime.strptime(from_date, "%Y-%m-%d").date()
+        return [f for f in all_files if extract_date_from_filename(f) >= cutoff]
+
+    elif mode == "date":
+        target = datetime.strptime(specific_date, "%Y-%m-%d").date()
+        return [f for f in all_files if extract_date_from_filename(f) == target]
+
+    return []
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", choices=["fullload", "from", "date"], required=True)
+    parser.add_argument("--from-date", help="Start date for 'from' mode, format: YYYY-MM-DD")
+    parser.add_argument("--specific-date", help="Specific date for 'date' mode, format: YYYY-MM-DD")
+    args = parser.parse_args()
 
-    cleaner = PubliCleaner()
-    raw_files = Path("./data/raw").glob("*.json")
+    if args.mode == "from" and not args.from_date:
+        raise ValueError("--from-date is required for 'from' mode")
+    if args.mode == "date" and not args.specific_date:
+        raise ValueError("--specific-date is required for 'date' mode")
 
-    for raw_file in raw_files:
-        data = cleaner.read_json(raw_file)
-        processed = []
-        for item in data:
-            processed.append(
-                {
-                    "source": cleaner.extract_str_single(item, "source"),
-                    "id": cleaner.extract_str_single(item, "id"),
-                    "title": cleaner.extract_str_single(item, "title"),
-                    "description": cleaner.extract_str_single(item, "description"),
-                    "county": cleaner.extract_str_multiple(item, "location")[0],
-                    "city": cleaner.extract_str_multiple(item, "location")[1],
-                    "address": cleaner.extract_str_multiple(item, "location")[2],
-                    "price": cleaner.extract_int_from_single(
-                        cleaner.extract_str_single(item, "price"), cleaner.PATTERN_PRICE
-                    ),
-                    "unit_price": cleaner.extract_int_from_multiple(
-                        cleaner.extract_str_single(item, "unit_price_surface"),
-                        cleaner.PATTERN_UNIT_PRICE,
-                    ),
-                    "surface": cleaner.extract_int_from_multiple(
-                        cleaner.extract_str_single(item, "unit_price_surface"),
-                        cleaner.PATTERN_SURFACE,
-                    ),
-                    "date_posted": cleaner.parse_date(
-                        item, "date_posted", "scraped_at", cleaner.PATTERN_POSTED_DATE
-                    ),
-                    "scraped_at": cleaner.parse_date(item, "scraped_at"),
-                    "rooms": cleaner.extract_rooms(item),
-                    "floor": cleaner.extract_floor(item),
-                    "built_year": cleaner.extract_built_year(item),
-                    "furnished": cleaner.extract_furnished(item),
-                    "near_metro": cleaner.extract_metro(item),
-                }
-            )
-        cleaner.write_json(f"data/processed/{raw_file.stem}_processed.json", processed)
+    files = get_files_to_process(args.mode, args.from_date, args.specific_date)
+
+    if not files:
+        print("No files found for the given parameters")
+    else:
+        cleaner = PubliCleaner()
+        for raw_file in files:
+            print(f"Processing {raw_file.name}...")
+            data = cleaner.read_json(raw_file)
+            processed = []
+            for item in data:
+                county, city, address = cleaner.extract_str_multiple(item, "location")
+                unit_price_surface = cleaner.extract_str_single(item, "unit_price_surface")
+                processed.append(
+                    {
+                        "source": cleaner.extract_str_single(item, "source"),
+                        "id": cleaner.extract_str_single(item, "id"),
+                        "title": cleaner.extract_str_single(item, "title"),
+                        "description": cleaner.extract_str_single(item, "description"),
+                        "county": county,
+                        "city": city,
+                        "address": address if address else None,
+                        "price": cleaner.extract_int_from_single(
+                            cleaner.extract_str_single(item, "price"), cleaner.PATTERN_PRICE
+                        ),
+                        "unit_price": cleaner.extract_int_from_multiple(
+                            unit_price_surface, cleaner.PATTERN_UNIT_PRICE
+                        ),
+                        "surface": cleaner.extract_int_from_multiple(
+                            unit_price_surface, cleaner.PATTERN_SURFACE
+                        ),
+                        "date_posted": cleaner.parse_date(
+                            item, "date_posted", "scraped_at", cleaner.PATTERN_POSTED_DATE
+                        ),
+                        "scraped_at": cleaner.parse_date(item, "scraped_at"),
+                        "rooms": cleaner.extract_rooms(item),
+                        "floor": cleaner.extract_floor(item),
+                        "built_year": cleaner.extract_built_year(item),
+                        "is_furnished": cleaner.extract_furnished(item),
+                        "near_metro": cleaner.extract_metro(item),
+                    }
+                )
+            output_path = Path(__file__).parent.parent / f"data/processed/{raw_file.stem}_processed.json"
+            cleaner.write_json(output_path, processed)
+            print(f"Done {raw_file.name} → {output_path.name}")
