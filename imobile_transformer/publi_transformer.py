@@ -1,9 +1,15 @@
 import re
+import sys
 import json
-import argparse
 
 from pathlib import Path
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from utils.args_processor import get_files_to_process
+from utils.args_parser import parse_args
+
+RAW_DIR = Path(__file__).parent.parent / "data/raw"
 
 
 class PubliCleaner:
@@ -154,56 +160,26 @@ class PubliCleaner:
         return True if re.search(r"\bmetrou(l)?\b", text) else None
 
 
-def extract_date_from_filename(file: Path) -> date:
-    match = re.search(r"(\d{4}_\d{2}_\d{2})", file.stem)
-    if match:
-        return datetime.strptime(match.group(1), "%Y_%m_%d").date()
-    return None
-
-
-def get_files_to_process(mode: str, from_date: str = None, specific_date: str = None) -> list[Path]:
-    raw_dir = Path(__file__).parent.parent / "data/raw"
-    all_files = sorted(raw_dir.glob("*.json"))
-
-    if mode == "fullload":
-        return all_files
-
-    elif mode == "from":
-        cutoff = datetime.strptime(from_date, "%Y-%m-%d").date()
-        return [f for f in all_files if extract_date_from_filename(f) >= cutoff]
-
-    elif mode == "date":
-        target = datetime.strptime(specific_date, "%Y-%m-%d").date()
-        return [f for f in all_files if extract_date_from_filename(f) == target]
-
-    return []
-
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["fullload", "from", "date"], required=True)
-    parser.add_argument("--from-date", help="Start date for 'from' mode, format: YYYY-MM-DD")
-    parser.add_argument("--specific-date", help="Specific date for 'date' mode, format: YYYY-MM-DD")
-    args = parser.parse_args()
+    args = parse_args()
 
-    if args.mode == "from" and not args.from_date:
-        raise ValueError("--from-date is required for 'from' mode")
-    if args.mode == "date" and not args.specific_date:
-        raise ValueError("--specific-date is required for 'date' mode")
-
-    files = get_files_to_process(args.mode, args.from_date, args.specific_date)
+    files = get_files_to_process(
+        RAW_DIR, args.source, args.mode, args.from_date, args.specific_date
+    )
 
     if not files:
-        print("No files found for the given parameters")
+        print("No files found for the given parameters.")
     else:
         cleaner = PubliCleaner()
         for raw_file in files:
-            print(f"Processing {raw_file.name}...")
+            print(f"Processing {raw_file.name} file...")
             data = cleaner.read_json(raw_file)
             processed = []
             for item in data:
                 county, city, address = cleaner.extract_str_multiple(item, "location")
-                unit_price_surface = cleaner.extract_str_single(item, "unit_price_surface")
+                unit_price_surface = cleaner.extract_str_single(
+                    item, "unit_price_surface"
+                )
                 processed.append(
                     {
                         "source": cleaner.extract_str_single(item, "source"),
@@ -214,7 +190,8 @@ if __name__ == "__main__":
                         "city": city,
                         "address": address if address else None,
                         "price": cleaner.extract_int_from_single(
-                            cleaner.extract_str_single(item, "price"), cleaner.PATTERN_PRICE
+                            cleaner.extract_str_single(item, "price"),
+                            cleaner.PATTERN_PRICE,
                         ),
                         "unit_price": cleaner.extract_int_from_multiple(
                             unit_price_surface, cleaner.PATTERN_UNIT_PRICE
@@ -223,7 +200,10 @@ if __name__ == "__main__":
                             unit_price_surface, cleaner.PATTERN_SURFACE
                         ),
                         "date_posted": cleaner.parse_date(
-                            item, "date_posted", "scraped_at", cleaner.PATTERN_POSTED_DATE
+                            item,
+                            "date_posted",
+                            "scraped_at",
+                            cleaner.PATTERN_POSTED_DATE,
                         ),
                         "scraped_at": cleaner.parse_date(item, "scraped_at"),
                         "rooms": cleaner.extract_rooms(item),
@@ -233,6 +213,9 @@ if __name__ == "__main__":
                         "near_metro": cleaner.extract_metro(item),
                     }
                 )
-            output_path = Path(__file__).parent.parent / f"data/processed/{raw_file.stem}_processed.json"
+            output_path = (
+                Path(__file__).parent.parent
+                / f"data/processed/{raw_file.stem}_processed.json"
+            )
             cleaner.write_json(output_path, processed)
-            print(f"Done {raw_file.name} → {output_path.name}")
+            print(f"Successfully processed {raw_file.name} file to {output_path.name} file.")
