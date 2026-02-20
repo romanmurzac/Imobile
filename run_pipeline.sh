@@ -82,12 +82,12 @@ else
 fi
 
 # -----------------------------
-# Run impobile_scraper
+# Run imobile_scraper
 # -----------------------------
-# for spider in $SPIDERS; do
-#   echo "----- INGESTING SOURCE: $spider -----"
-#   scrapy crawl $spider
-# done
+for spider in $SPIDERS; do
+  echo "----- INGESTING SOURCE: $spider -----"
+  scrapy crawl $spider
+done
 
 # -----------------------------
 # Run imobile_transformer
