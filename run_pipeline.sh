@@ -14,6 +14,7 @@ SOURCES=()
 PATH_SCRAPER="./imobile_scraper"
 PATH_TRANSFORMER="../imobile_transformer"
 PATH_LOADER="../imobile_loader"
+PATH_APP="../imobile_app"
 
 # -----------------------------
 # Arguments parsing
@@ -86,7 +87,7 @@ fi
 # -----------------------------
 for spider in $SPIDERS; do
   echo "----- INGESTING SOURCE: $spider -----"
-  scrapy crawl $spider
+  # scrapy crawl $spider
 done
 
 # -----------------------------
@@ -138,3 +139,12 @@ case "$MODE" in
 esac
 
 echo "Imobile pipeline finished successfully!"
+
+# -----------------------------
+# Run imobile_app
+# -----------------------------
+cd ${PATH_APP}
+
+echo "----- RUNNING IMOBILE APP -----"
+
+streamlit run app.py

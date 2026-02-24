@@ -1,5 +1,9 @@
 venv/
 **/__pycache__/
-**/data/
+**/data/raw/
+**/data/processed/
+**/data/output/
+**/data/warehouse/
 **checker.py
 **/sql_test/
+/imobile_scraper/data/

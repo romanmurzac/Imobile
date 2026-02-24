@@ -65,3 +65,8 @@ WHERE NOT EXISTS (
       AND d.id = s.id
       AND d.is_current = TRUE
 );
+
+-- Save the data on disk
+COPY dim.listings
+TO '../data/dim/listings.parquet'
+(FORMAT PARQUET);
