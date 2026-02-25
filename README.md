@@ -87,7 +87,7 @@ Run for specific date for few data sources
 ./run_pipeline.sh --source publi olx --mode date --specific-date 2026-02-25
 ```
 
-**Note**: You can mix any kind of `mode` with any kind of `date`.
+**Note**: You can mix any kind of `source` with any kind of `mode`.
 
 
 ## Run service
