@@ -14,7 +14,8 @@ SELECT
     built_year,
     is_furnished,
     near_metro,
-    title
+    title,
+    id
 FROM
     dim.listings
 WHERE

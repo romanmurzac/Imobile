@@ -6,6 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils.args_processor import get_files_to_process
 from utils.args_parser import parse_args
+from utils.logger import logger
 
 DB_PATH = Path(__file__).parent.parent / "data/warehouse/imobile.duckdb"
 SQL_DIR = Path(__file__).parent / "sql"
@@ -24,9 +25,9 @@ class DuckDBRunner:
 
     def run_sql(self, path: Path, reference: bool = False, file: str = None) -> None:
         if file:
-            print(f"Running {path.name} query for file {file.name} ...")
+            logger.info(f"Running {path.name} query for file {file.name} ...")
         else:
-            print(f"Running {path.name} query ...")
+            logger.info(f"Running {path.name} query ...")
         try:
             if reference:
                 sql = path.read_text(encoding="utf-8").replace(
@@ -35,9 +36,9 @@ class DuckDBRunner:
                 self.con.execute(sql)
             else:
                 self.con.execute(path.read_text(encoding="utf-8"))
-            print(f"Successfully executed {path.name} query.\n")
+            logger.info(f"Successfully executed {path.name} query.\n")
         except Exception as e:
-            print(f"Failed to execute {path.name} query: {e}\n")
+            logger.error(f"Failed to execute {path.name} query: {e}\n")
 
     def close_con(self) -> None:
         self.con.close()
@@ -51,7 +52,7 @@ if __name__ == "__main__":
     )
 
     if not files:
-        print("No files found for the given parameters. Exiting...")
+        logger.warning("No files found for the given parameters. Exiting...")
     else:
         conn = DuckDBRunner(DB_PATH)
         conn.run_sql(SQL_DIR / "01_schemas.sql")

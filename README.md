@@ -38,8 +38,9 @@ Imobile/
 ├──imobile_transformer/
 │  └───publi_transformer.py
 ├──media/
-│  └───image_1.1.png
+│  └───image_n.m.png
 ├──utils/
+│  ├──logger.py
 │  ├──args_parser.py
 │  └──args_processor.py
 ├──.gitignore
@@ -92,7 +93,7 @@ Run for specific date for few data sources
 ## Run service
 
 ### Run extractor
-Extractor is developed using [Scrapy](). To run just this service follow the run below. Use any available name of the spiders or sequence of names from the list of sources.
+Extractor is developed using [Scrapy](https://www.scrapy.org/). To run just this service follow the run below. Use any available name of the spiders or sequence of names from the list of sources.
 ```bash
 cd imobile_scraper
 scrapy crawl publi
@@ -100,7 +101,7 @@ scrapy crawl publi
 
 
 ### Run transformer
-Transformer is developed using [Pandas](). To run just this service follow the run below. Use any available name of the transformers.
+Transformer is developed using [Pandas](https://pandas.pydata.org/). To run just this service follow the run below. Use any available name of the transformers.
 ```bash
 cd imobile_transformer
 python publi_transformer.py --source all --mode full_load
@@ -108,14 +109,14 @@ python publi_transformer.py --source all --mode full_load
 
 
 ### Run loader
-Loader is developed using [DuckDB](). To run just this service follow the run below. Use any source and mode described above.
+Loader is developed using [DuckDB](https://duckdb.org/). To run just this service follow the run below. Use any source and mode described above.
 ```bash
 cd imobile_loader
 python loader.py --source all --mode full_load
 ```
 
 ### Run app
-Application is developed using [Streamlit](). To run just this service follow the run below. Use any source and mode described above.
+Application is developed using [Streamlit](https://streamlit.io/). To run just this service follow the run below. Use any source and mode described above.
 ```bash
 cd imobile_app
 python streamlit run app.py
@@ -130,5 +131,5 @@ You can do ordering on data on each column, select specific column and download 
 
 ### Historical data
 Select the source of data and enter a specific id of a record and analyse the price over time for it.\
-![Historical bar](./media/image_1.1.png)
+![Historical bar](./media/image_1.2.png)
 

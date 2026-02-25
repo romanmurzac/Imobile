@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils.args_processor import get_files_to_process
 from utils.args_parser import parse_args
+from utils.logger import logger
 
 RAW_DIR = Path(__file__).parent.parent / "data/raw"
 
@@ -168,11 +169,11 @@ if __name__ == "__main__":
     )
 
     if not files:
-        print("No files found for the given parameters.")
+        logger.warning("No files found for the given parameters.")
     else:
         cleaner = PubliCleaner()
         for raw_file in files:
-            print(f"Processing {raw_file.name} file...")
+            logger.info(f"Processing {raw_file.name} file...")
             data = cleaner.read_json(raw_file)
             processed = []
             for item in data:
@@ -218,4 +219,4 @@ if __name__ == "__main__":
                 / f"data/processed/{raw_file.stem}_processed.json"
             )
             cleaner.write_json(output_path, processed)
-            print(f"Successfully processed {raw_file.name} file to {output_path.name} file.")
+            logger.info(f"Successfully processed {raw_file.name} file to {output_path.name} file.")
