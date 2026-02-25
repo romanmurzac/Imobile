@@ -1,6 +1,5 @@
 # Imobile
-
-Romanian Real Estate Exploratory Data Analysis (EDA).
+Romanian Real Estate Exploratory Data Analysis (EDA) from public sources.
 
 
 ## Sources
@@ -59,6 +58,7 @@ Imobile/
         - listings_table.parquet
 - framework
 
+
 ## Configure
 Create virtual environment and activate it.
 ```
@@ -70,6 +70,7 @@ Install dependencies
 ```
 pip install -r requirements.txt
 ```
+
 
 ## Run pipeline
 Run full load for all available data sources.
@@ -86,7 +87,6 @@ Run for specific date for few data sources
 ```bash
 ./run_pipeline.sh --source publi olx --mode date --specific-date 2026-02-25
 ```
-
 **Note**: You can mix any kind of `source` with any kind of `mode`.
 
 
@@ -115,6 +115,7 @@ cd imobile_loader
 python loader.py --source all --mode full_load
 ```
 
+
 ### Run app
 Application is developed using [Streamlit](https://streamlit.io/). To run just this service follow the run below. Use any source and mode described above.
 ```bash
@@ -129,7 +130,7 @@ python streamlit run app.py
 You can do ordering on data on each column, select specific column and download the resulted dataset.\
 ![App table](./media/image_1.1.png)
 
+
 ### Historical data
 Select the source of data and enter a specific id of a record and analyse the price over time for it.\
 ![Historical bar](./media/image_1.2.png)
-
