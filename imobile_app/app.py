@@ -77,6 +77,9 @@ st.dataframe(
         "title": st.column_config.TextColumn(
             "Title",
         ),
+        "id": st.column_config.TextColumn(
+            "ID",
+        ),
     },
     hide_index=True,
     width="stretch",
